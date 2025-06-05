@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Converter</title>
+    <link rel="stylesheet" href="/static/css/style.css/">
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1>Chemical Converter</h1>
+            <form action="/convert" method="POST">
+                <div class="form-group">
+                    <label for="input_type">Input Type</label>
+                    <select id="input_type" name="input_type" required>
+                        <option value="smiles">SMILES</option>
+                        <option value="inchi">InChI</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="chemical_input">Chemical Input</label>
+                    <input type="text" id="chemical_input" name="chemical_input" placeholder="Enter SMILES or InChI" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="output_type">Output Type</label>
+                    <select id="output_type" name="output_type" required>
+                        <option value="smiles">SMILES</option>
+                        <option value="inchi">InChI</option>
+                        <option value="sdf">SDF</option>
+                        <option value="xyz">XYZ</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-btn">Convert</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

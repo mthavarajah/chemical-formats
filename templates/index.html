@@ -1,42 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chemical Converter</title>
-    <link rel="stylesheet" href="/static/css/style.css/">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chemical Converter</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
-    <div class="container">
-        <div class="form-container">
-            <h1>Chemical Format Converter</h1>
-            <form action="/convert" method="POST">
-                <div class="form-group">
-                    <label for="input_type">Input Type</label>
-                    <select id="input_type" name="input_type" required>
-                        <option value="smiles">SMILES</option>
-                        <option value="inchi">InChI</option>
-                    </select>
-                </div>
+  <div class="container">
+    <div class="form-container">
+      <h1>Chemical Format Converter</h1>
 
-                <div class="form-group">
-                    <label for="chemical_input">Chemical Input</label>
-                    <input type="text" id="chemical_input" name="chemical_input" placeholder="Enter SMILES or InChI" required>
-                </div>
+      <form action="/convert" method="POST" id="conversion-form">
+        <div id="input-rows">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="input_type">Input Type</label>
+              <select class="input-type" name="input_type" required>
+                <option value="SMILES">SMILES</option>
+                <option value="InChi">InChI</option>
+              </select>
+            </div>
 
-                <div class="form-group">
-                    <label for="output_type">Output Type</label>
-                    <select id="output_type" name="output_type" required>
-                        <option value="smiles">SMILES</option>
-                        <option value="inchi">InChI</option>
-                        <option value="sdf">SDF</option>
-                        <option value="xyz">XYZ</option>
-                    </select>
-                </div>
+            <div class="form-group">
+              <label for="chemical_input">Chemical Input</label>
+              <input
+                type="text"
+                class="chemical-input"
+                name="chemical_input"
+                
+                placeholder="Enter SMILES or InChI"
+                required
+              />
+            </div>
 
-                <button type="submit" class="submit-btn">Convert</button>
-            </form>
+            <div class="form-group output-group">
+              <label for="output_type">Output Type</label>
+              <select class="output-type" name="output_type" required>
+                <option value="SMILES">SMILES</option>
+                <option value="InChi">InChI</option>
+                <option value="SDF">SDF</option>
+                <option value="XYZ">XYZ</option>
+              </select>
+              <button
+                type="button"
+                class="delete-row-btn"
+                aria-label="Delete row"
+                title="Delete row"
+              >
+                −
+              </button>
+            </div>
+          </div>
         </div>
+
+        <button type="button" id="add-input-btn" class="add-input-btn">+ Add Input</button>
+        <button type="submit" class="submit-btn">Convert</button>
+      </form>
     </div>
+  </div>
+
+<script>
+  const inputRows = document.getElementById("input-rows");
+  const addBtn = document.getElementById("add-input-btn");
+
+  // Initial setup: hide delete button on first row
+  const firstRow = inputRows.querySelector(".form-row");
+  const firstDeleteBtn = firstRow.querySelector(".delete-row-btn");
+  firstDeleteBtn.style.visibility = "hidden";
+
+  // Function to add new row
+  addBtn.addEventListener("click", () => {
+    const newRow = firstRow.cloneNode(true);
+
+    // Reset input fields
+    newRow.querySelectorAll("input").forEach(input => input.value = "");
+    newRow.querySelectorAll("select").forEach(select => select.value = "smiles");
+
+    // Show and attach delete button
+    const delBtn = newRow.querySelector(".delete-row-btn");
+    delBtn.style.visibility = "visible";
+    delBtn.onclick = () => newRow.remove();
+
+    inputRows.appendChild(newRow);
+  });
+</script>
 </body>
 </html>

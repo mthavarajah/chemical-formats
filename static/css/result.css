@@ -1,0 +1,234 @@
+:root {
+  --base-spacing-unit: 24px;
+  --half-spacing-unit: 12px;
+  --color-alpha: #000000;
+  --color-form-highlight: #ffffff;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  padding: var(--base-spacing-unit);
+  font-family: 'Source Sans Pro', sans-serif;
+  margin: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+.container {
+  max-width: 6000px;
+  margin-right: auto;
+  margin-left: auto;
+  display: block;
+  padding-top: var(--base-spacing-unit);
+}
+
+.table {
+  width: 100%;
+  border: 1px solid var(--color-form-highlight);
+}
+
+.table-header {
+  display: flex;
+  width: 100%;
+  background: #000;
+  padding: calc(var(--half-spacing-unit) * 1.5) 0;
+}
+
+.table-row {
+  display: flex;
+  width: 100%;
+  padding: calc(var(--half-spacing-unit) * 1.5) 0;
+}
+
+.table-row:nth-of-type(odd) {
+  background: var(--color-form-highlight);
+}
+
+.table-row:not(:last-child) {
+  border-bottom: 1px solid #858585;
+}
+
+.table-data, .header__item {
+  flex: 1 1 20%;
+  text-align: center;
+}
+
+.table-row .table-data {
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.header__item {
+  text-transform: uppercase;
+  font-size: 1.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.filter__link {
+  color: white;
+  text-decoration: none;
+  position: relative;
+  display: inline-block;
+  padding-left: var(--base-spacing-unit);
+  padding-right: var(--base-spacing-unit);
+}
+
+.filter__link::after {
+  content: '';
+  position: absolute;
+  right: calc(-1 * var(--half-spacing-unit) * 1.5);
+  color: white;
+  font-size: var(--half-spacing-unit);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.filter__link.desc::after {
+  content: '(desc)';
+}
+
+.filter__link.asc::after {
+  content: '(asc)';
+}
+
+#formDiv {
+  display: none;
+  margin-top: var(--base-spacing-unit);
+  background-color: var(--color-form-highlight);
+  padding: var(--base-spacing-unit);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#formDiv form {
+  display: flex;
+  width: 100%;
+  flex-wrap: nowrap;
+  gap: var(--half-spacing-unit);
+  overflow-x: auto;
+  align-items: center;
+  justify-content: center;
+}
+
+#formDiv input[type="text"],
+#formDiv input[type="number"],
+.output-cell {
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+#formDiv input[type="text"],
+#formDiv input[type="number"] {
+  flex: 0 0 auto;
+  width: max-content;
+  padding: var(--half-spacing-unit);
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+#formDiv button[type="submit"],
+button {
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+#formDiv button[type="submit"] {
+  margin-top: var(--half-spacing-unit);
+  padding: 10px 20px;
+  background-color: var(--color-alpha);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  margin-bottom: 12px;
+}
+
+#formDiv button[type="submit"]:hover {
+  background-color: #000000;
+}
+
+button {
+  display: block;
+  margin: var(--base-spacing-unit) auto 0;
+  padding: 12px 24px;
+  background-color: var(--color-alpha);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #434343;
+}
+
+.toggle-btn {
+  position: absolute;
+  top: -30px;
+  right: 0px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background-color: #000000;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  transition: background-color 0.3s ease;
+  z-index: 10;
+}
+
+.toggle-btn:hover {
+  background-color: #505050;
+}
+
+.output-cell {
+  position: relative;
+  min-height: 150px;
+  max-width: 300px;
+  word-break: break-word;
+  display: flex;
+  justify-content: center;
+  align-items: center; 
+  flex-direction: column;
+}
+
+.hidden {
+  display: none;
+}
+
+.output-image {
+  max-width: 100%;
+  max-height: 150px;
+  display: block;
+  margin-top: 10px;
+  object-fit: contain;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.output-3d {
+  margin-top: 10px;
+  max-width: 100%;
+  max-height: 150px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+output {
+  text-align: center;
+  font-size: 1.2rem;
+  display: block;
+}

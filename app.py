@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, send_from_directory
-from convert_inchi import inchi_to_smiles, inchi_sdf_visualize, inchi_to_xyz_visualize
-from convert_smiles import smiles_to_inchi, smiles_sdf_visualize, smiles_to_xyz_visualize
+from convert_inchi import inchi_to_inchi, inchi_to_smiles, inchi_sdf_visualize, inchi_to_xyz_visualize
+from convert_smiles import smiles_to_smiles, smiles_to_inchi, smiles_sdf_visualize, smiles_to_xyz_visualize
 
 app = Flask(__name__)
 
@@ -12,8 +12,8 @@ if not os.path.exists(TEMP_DIR):
 if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
 
-ALLOWED_INPUT_TYPES = ["inchi", "smiles"]
-ALLOWED_OUTPUT_TYPES = ["smiles", "inchi", "sdf", "xyz"]
+ALLOWED_INPUT_TYPES = ["InChi", "SMILES"]
+ALLOWED_OUTPUT_TYPES = ["SMILES", "InChi", "SDF", "XYZ"]
 
 @app.route('/')
 def index():
@@ -21,42 +21,59 @@ def index():
 
 @app.route('/convert', methods=['POST'])
 def convert():
-    input_type = request.form['input_type']
-    output_type = request.form['output_type']
-    chemical_input = request.form['chemical_input']
+    input_types = request.form.getlist('input_type')
+    output_types = request.form.getlist('output_type')
+    chemical_inputs = request.form.getlist('chemical_input')
 
-    if input_type not in ALLOWED_INPUT_TYPES or output_type not in ALLOWED_OUTPUT_TYPES:
-        return "Invalid input type or output type", 400
+    results = []
 
-    output_file = None
-    output_image_file = None
-    output_text = None
+    for input_type, chemical_input, output_type in zip(input_types, chemical_inputs, output_types):
+        if input_type not in ALLOWED_INPUT_TYPES or output_type not in ALLOWED_OUTPUT_TYPES:
+            return "Invalid input type or output type", 400
 
-    if input_type == "inchi":
-        if output_type == "smiles":
-            output_text = inchi_to_smiles(chemical_input)
-        elif output_type == "sdf":
-            output_file, output_image_file = inchi_sdf_visualize(chemical_input)
-        elif output_type == "xyz":
-            output_file, output_image_file = inchi_to_xyz_visualize(chemical_input)
-    elif input_type == "smiles":
-        if output_type == "inchi":
-            output_text = smiles_to_inchi(chemical_input)
-        elif output_type == "sdf":
-            output_file, output_image_file = smiles_sdf_visualize(chemical_input)
-        elif output_type == "xyz":
-            output_file, output_image_file = smiles_to_xyz_visualize(chemical_input)
+        output_file = None
+        output_image_file = None
+        output_text = None
+        html_3d = None
 
-    return render_template('result.html', output_file=output_file, output_text=output_text, output_image_file=output_image_file)
+        if input_type == "InChi":
+            if output_type == "InChi":
+                output_text, output_file = inchi_to_inchi(chemical_input)
+            elif output_type == "SMILES":
+                output_text, output_file = inchi_to_smiles(chemical_input)
+            elif output_type == "SDF":
+                output_file, output_image_file, html_3d = inchi_sdf_visualize(chemical_input)
+            elif output_type == "XYZ":
+                output_file, output_image_file, html_3d = inchi_to_xyz_visualize(chemical_input)
+        elif input_type == "SMILES":
+            if output_type == "SMILES":
+                output_text, output_file = smiles_to_smiles(chemical_input)
+            elif output_type == "InChi":
+                output_text, output_file = smiles_to_inchi(chemical_input)
+            elif output_type == "SDF":
+                output_file, output_image_file, html_3d = smiles_sdf_visualize(chemical_input)
+            elif output_type == "XYZ":
+                output_file, output_image_file, html_3d = smiles_to_xyz_visualize(chemical_input)
+
+        results.append({
+            'input_type': input_type,
+            'chemical_input': chemical_input,
+            'output_type': output_type,
+            'output_text': output_text,
+            'output_file': os.path.basename(output_file) if output_file else None,
+            'output_image_file': os.path.basename(output_image_file) if output_image_file else None,
+            'html_3d': html_3d
+        })
+
+    return render_template('result.html', results=results)
 
 @app.route('/download/<filename>')
 def download_file(filename):
     return send_from_directory('temp_files', filename, as_attachment=True)
-
 
 @app.route('/temp_files/<filename>')
 def serve_image(filename):
     return send_from_directory('temp_files', filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=8000)

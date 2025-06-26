@@ -1,7 +1,9 @@
 import os
-from flask import Flask, render_template, request, send_from_directory, session, redirect, url_for, flash
+from dotenv import load_dotenv
+from flask import Flask, render_template, request, send_from_directory, session, redirect, url_for, flash, jsonify
 from convert_inchi import inchi_to_inchi, inchi_to_smiles, inchi_sdf_visualize, inchi_to_xyz_visualize
 from convert_smiles import smiles_to_smiles, smiles_to_inchi, smiles_sdf_visualize, smiles_to_xyz_visualize
+from lipinski_plot import process_lipinski_inputs
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, login_required, logout_user, current_user, LoginManager
@@ -10,9 +12,10 @@ from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bcrypt import Bcrypt
 
+load_dotenv()
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://chemswap_postgresql_user:6slh84CSVcPSni1v0GXGNqcMhnAfUWPA@dpg-d1ekh4euk2gs73argsvg-a.oregon-postgres.render.com/chemswap_postgresql'
-app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
@@ -124,6 +127,7 @@ def convert():
     chemical_inputs = request.form.getlist('chemical_input[]')
 
     results = []
+    lipinski_input_list = []
 
     for input_type, chemical_input, output_type in zip(input_types, chemical_inputs, output_types):
         if input_type not in ALLOWED_INPUT_TYPES or output_type not in ALLOWED_OUTPUT_TYPES:
@@ -134,24 +138,38 @@ def convert():
         output_text = None
         html_3d = None
 
-        if input_type == "InChi":
-            if output_type == "InChi":
-                output_text, output_file = inchi_to_inchi(chemical_input)
-            elif output_type == "SMILES":
-                output_text, output_file = inchi_to_smiles(chemical_input)
-            elif output_type == "SDF":
-                output_file, output_image_file, html_3d = inchi_sdf_visualize(chemical_input)
-            elif output_type == "XYZ":
-                output_file, output_image_file, html_3d = inchi_to_xyz_visualize(chemical_input)
-        elif input_type == "SMILES":
-            if output_type == "SMILES":
-                output_text, output_file = smiles_to_smiles(chemical_input)
-            elif output_type == "InChi":
-                output_text, output_file = smiles_to_inchi(chemical_input)
-            elif output_type == "SDF":
-                output_file, output_image_file, html_3d = smiles_sdf_visualize(chemical_input)
-            elif output_type == "XYZ":
-                output_file, output_image_file, html_3d = smiles_to_xyz_visualize(chemical_input)
+        # Append inputs for Lipinski plot only if input type is SMILES or InChi (since plot only supports those)
+        if input_type in ["SMILES", "InChi"]:
+            lipinski_input_list.append((input_type, chemical_input))
+
+        try:
+            if input_type == "InChi":
+                if output_type == "InChi":
+                    output_text, output_file = inchi_to_inchi(chemical_input)
+                elif output_type == "SMILES":
+                    output_text, output_file = inchi_to_smiles(chemical_input)
+                elif output_type == "SDF":
+                    output_file, output_image_file, html_3d = inchi_sdf_visualize(chemical_input)
+                elif output_type == "XYZ":
+                    output_file, output_image_file, html_3d = inchi_to_xyz_visualize(chemical_input)
+            elif input_type == "SMILES":
+                if output_type == "SMILES":
+                    output_text, output_file = smiles_to_smiles(chemical_input)
+                elif output_type == "InChi":
+                    output_text, output_file = smiles_to_inchi(chemical_input)
+                elif output_type == "SDF":
+                    output_file, output_image_file, html_3d = smiles_sdf_visualize(chemical_input)
+                elif output_type == "XYZ":
+                    output_file, output_image_file, html_3d = smiles_to_xyz_visualize(chemical_input)
+            else:
+                # For other input types, skip Lipinski and conversion or handle as needed
+                output_text = "N/A"
+        except Exception:
+            # On any conversion error, mark output as N/A gracefully
+            output_text = "N/A"
+            output_file = None
+            output_image_file = None
+            html_3d = None
 
         results.append({
             'input_type': input_type,
@@ -163,7 +181,10 @@ def convert():
             'html_3d': html_3d
         })
 
-    return render_template('result.html', results=results)
+    # Generate Lipinski plot HTML file (saved in temp_files/lipinski_plot.html)
+    lipinski_plot_file = process_lipinski_inputs(lipinski_input_list)
+
+    return render_template('result.html', results=results, lipinski_plot_file=lipinski_plot_file)
 
 @app.route('/download/<filename>')
 def download_file(filename):
@@ -172,6 +193,14 @@ def download_file(filename):
 @app.route('/temp_files/<filename>')
 def serve_image(filename):
     return send_from_directory(TEMP_DIR, filename)
+
+@app.route('/lipinski_plot')
+def serve_lipinski_plot():
+    return send_from_directory('temp_files', 'lipinski_plot.html')
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return jsonify({"error": "Internal Server Error. Please try again later."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

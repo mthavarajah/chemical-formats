@@ -9,6 +9,7 @@
 <body>
 <div class="container">
     <h1 style="text-align:center; margin-bottom: 24px;">Conversion Results</h1>
+    <iframe src="{{ url_for('serve_lipinski_plot') }}" style="width: 100%; height: 400px; border: none;"></iframe>
     <div class="table" role="table" aria-label="Conversion Results Table">
         <div class="table-header" role="rowgroup">
             <div class="header__item" role="columnheader"><a class="filter__link" href="#">Input Type</a></div>
@@ -23,30 +24,38 @@
             {% for row in results %}
             <div class="table-row" role="row">
                 <div class="table-data" role="cell">{{ row.input_type }}</div>
-                <div class="table-data" role="cell" style="word-break: break-word; max-width: 200px;">{{ row.chemical_input }}</div>
+                <div class="table-data" role="cell" style="word-break: break-word; max-width: 200px;">
+                    {{ row.chemical_input }}
+                </div>
                 <div class="table-data" role="cell">{{ row.output_type }}</div>
                 <div class="table-data output-cell" role="cell" style="max-width: 300px;">
-
-                    {% if row.output_type in ['SDF', 'XYZ'] %}
-                        <button class="toggle-btn" aria-label="Toggle 2D/3D View">Show 3D</button>
-                        <img src="{{ url_for('serve_image', filename=row.output_image_file) }}" alt="2D Structure" class="output-image output-2d" style="display: block;" />
-                        <div class="output-3d" style="display: none;">
-                            {{ row.html_3d|safe }}
-                        </div>
+                    {% if row.error %}
+                        <span style="color: red; font-weight: bold;">{{ row.error }}</span>
                     {% else %}
-                        {% if row.output_text %}
-                            {{ row.output_text }}
+                        {% if row.output_type in ['SDF', 'XYZ'] %}
+                            <button class="toggle-btn" aria-label="Toggle 2D/3D View">Show 3D</button>
+                            <img src="{{ url_for('serve_image', filename=row.output_image_file) }}" alt="2D Structure" class="output-image output-2d" style="display: block;" />
+                            <div class="output-3d" style="display: none;">
+                                {{ row.html_3d|safe }}
+                            </div>
+                        {% else %}
+                            {% if row.output_text %}
+                                {{ row.output_text }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="table-data" role="cell">
+                    {% if row.error %}
+                        N/A
+                    {% else %}
+                        {% if row.output_file %}
+                            <a href="{{ url_for('download_file', filename=row.output_file) }}" download><i class="fa-solid fa-download" style="font-size: 30px; color: #000000;"></i></a>
                         {% else %}
                             N/A
                         {% endif %}
-                    {% endif %}
-
-                </div>
-                <div class="table-data" role="cell">
-                    {% if row.output_file %}
-                        <a href="{{ url_for('download_file', filename=row.output_file) }}" download><i class="fa-solid fa-download" style="font-size: 30px; color: #000000;"></i></a>
-                    {% else %}
-                        N/A
                     {% endif %}
                 </div>
             </div>

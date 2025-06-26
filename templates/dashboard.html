@@ -7,16 +7,17 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
+  <div class="logo-wrapper">
+    <img src="/static/images/logo.png" alt="ChemSwap Logo" width="250" height="110">
+  </div>
   <div class="container">
     <div class="form-container">
-      <h1>ChemSwap</h1>
-
       <form action="/convert" method="POST" id="conversion-form">
         <div id="input-rows">
           <div class="form-row">
             <div class="form-group">
               <label for="input_type">Input Type</label>
-              <select class="input-type" name="input_type" required>
+              <select class="input-type" name="input_type[]" required>
                 <option value="SMILES">SMILES</option>
                 <option value="InChi">InChI</option>
               </select>
@@ -27,8 +28,7 @@
               <input
                 type="text"
                 class="chemical-input"
-                name="chemical_input"
-                
+                name="chemical_input[]"
                 placeholder="Enter SMILES or InChI"
                 required
               />
@@ -36,7 +36,7 @@
 
             <div class="form-group output-group">
               <label for="output_type">Output Type</label>
-              <select class="output-type" name="output_type" required>
+              <select class="output-type" name="output_type[]" required>
                 <option value="SMILES">SMILES</option>
                 <option value="InChi">InChI</option>
                 <option value="SDF">SDF</option>
@@ -58,32 +58,33 @@
         <button type="submit" class="submit-btn">Convert</button>
       </form>
     </div>
+    <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
   </div>
 
-<script>
-  const inputRows = document.getElementById("input-rows");
-  const addBtn = document.getElementById("add-input-btn");
+  <script>
+    const inputRows = document.getElementById("input-rows");
+    const addBtn = document.getElementById("add-input-btn");
 
-  // Initial setup: hide delete button on first row
-  const firstRow = inputRows.querySelector(".form-row");
-  const firstDeleteBtn = firstRow.querySelector(".delete-row-btn");
-  firstDeleteBtn.style.visibility = "hidden";
+    // Initial setup: hide delete button on first row
+    const firstRow = inputRows.querySelector(".form-row");
+    const firstDeleteBtn = firstRow.querySelector(".delete-row-btn");
+    firstDeleteBtn.style.visibility = "hidden";
 
-  // Function to add new row
-  addBtn.addEventListener("click", () => {
-    const newRow = firstRow.cloneNode(true);
+    // Function to add new row
+    addBtn.addEventListener("click", () => {
+      const newRow = firstRow.cloneNode(true);
 
-    // Reset input fields
-    newRow.querySelectorAll("input").forEach(input => input.value = "");
-    newRow.querySelectorAll("select").forEach(select => select.value = "smiles");
+      // Reset input fields
+      newRow.querySelectorAll("input").forEach(input => input.value = "");
+      newRow.querySelectorAll("select").forEach(select => select.value = "SMILES");
 
-    // Show and attach delete button
-    const delBtn = newRow.querySelector(".delete-row-btn");
-    delBtn.style.visibility = "visible";
-    delBtn.onclick = () => newRow.remove();
+      // Show and attach delete button
+      const delBtn = newRow.querySelector(".delete-row-btn");
+      delBtn.style.visibility = "visible";
+      delBtn.onclick = () => newRow.remove();
 
-    inputRows.appendChild(newRow);
-  });
-</script>
+      inputRows.appendChild(newRow);
+    });
+  </script>
 </body>
 </html>

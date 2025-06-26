@@ -30,13 +30,13 @@ body {
     padding: 10px;
 }
 
-h1 {
-    font-size: 2.5rem;
+.logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 30px;
-    color: #4a4a4a;
-    text-align: center;
-    font-weight: 600;
 }
+
 
 /* Form Rows */
 .form-row {
@@ -83,7 +83,7 @@ input::placeholder {
 /* Add Row Button */
 .add-input-btn {
     display: inline-block;
-    background-color: #818181;
+    background-color: #007BFF;
     color: white;
     padding: 10px 20px;
     border-radius: 6px;
@@ -96,12 +96,12 @@ input::placeholder {
 }
 
 .add-input-btn:hover {
-    background-color: #c4c4c4;
+    background-color: #0056b3;
 }
 
 /* Submit Button */
 .submit-btn {
-    background-color: #000000;
+    background-color: #28a745;
     color: white;
     padding: 12px 20px;
     border: none;
@@ -114,7 +114,7 @@ input::placeholder {
 }
 
 .submit-btn:hover {
-    background-color: #4e4e4e;
+    background-color: #1c7c31;
 }
 
 /* Delete Button */
@@ -141,6 +141,46 @@ input::placeholder {
 .delete-row-btn:hover {
     background-color: #c4c4c4;
 }
+
+.logout-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: #818181;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+    background-color: #c4c4c4;
+}
+
+/* New Logo Styling */
+.logo-wrapper {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.logo-wrapper img {
+    display: inline-block;
+}
+
+/* Adjust body for layout */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7fc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 
 /* Responsive Styling */
 @media screen and (max-width: 768px) {

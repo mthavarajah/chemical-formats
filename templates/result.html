@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>ChemSwap Results</title>
     <link rel="stylesheet" href="/static/css/result.css" />
+    <script src="https://kit.fontawesome.com/772b7313f2.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="container">
@@ -15,6 +16,7 @@
             <div class="header__item" role="columnheader"><a class="filter__link" href="#">Output Type</a></div>
             <div class="header__item" role="columnheader"><a class="filter__link" href="#">Output</a></div>
             <div class="header__item" role="columnheader"><a class="filter__link" href="#">Download File</a></div>
+            <i class="fa-solid fa-download"></i>
         </div>
 
         <div class="table-content" role="rowgroup">
@@ -42,7 +44,7 @@
                 </div>
                 <div class="table-data" role="cell">
                     {% if row.output_file %}
-                        <a href="{{ url_for('download_file', filename=row.output_file) }}" download>Download</a>
+                        <a href="{{ url_for('download_file', filename=row.output_file) }}" download><i class="fa-solid fa-download" style="font-size: 30px; color: #000000;"></i></a>
                     {% else %}
                         N/A
                     {% endif %}
@@ -63,7 +65,7 @@
 
       if (img2d.style.display !== 'none') {
         img2d.style.display = 'none';
-        div3d.style.display = 'flex';  // flex to center 3D content if needed
+        div3d.style.display = 'flex';
         button.textContent = 'Show 2D';
       } else {
         img2d.style.display = 'block';

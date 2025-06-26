@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ChemSwap - Home</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+}
+.left {
+    flex: 1;
+    background: #f9fafc;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 60px;
+}
+.left img {
+    margin-bottom: 20px;
+}
+.left h1 {
+    font-size: 2.5rem;
+    color: #333;
+}
+.left p {
+    font-size: 1.1rem;
+    color: #555;
+    margin: 10px 0 30px 0;
+}
+.buttons {
+    display: flex;
+    gap: 20px;
+}
+.btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.3s, transform 0.2s;
+}
+.btn:hover {
+    transform: translateY(-3px);
+}
+.login {
+    background-color: #007BFF;
+    color: #fff;
+}
+.login:hover {
+    background-color: #0056b3;
+}
+.signup {
+    background-color: #28a745;
+    color: #fff;
+}
+.signup:hover {
+    background-color: #1c7c31;
+}
+.right {
+    flex: 1;
+    background: #f0f4ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.right img {
+    max-width: 90%;
+    max-height: 90vh;
+    border-radius: 12px;
+}
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    .left, .right {
+        flex: none;
+        width: 100%;
+        padding: 40px;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- Left Side: Logo, Welcome, Buttons -->
+<div class="left">
+    <img src="/static/images/logo.png" alt="ChemSwap Logo" width="200" height="90">
+    <h1>Welcome to ChemSwap</h1>
+    <p>Convert chemical formats with ease.</p>
+    <div class="buttons">
+        <a href="{{url_for('login')}}" class="btn login">Login</a>
+        <a href="{{url_for('register')}}" class="btn signup">Sign Up</a>
+    </div>
+</div>
+
+<!-- Right Side: Images -->
+<div class="right">
+    <!-- Add any images you want here -->
+    <img src="/static/images/home-image.jpg" alt="Chemical illustration">
+</div>
+
+</body>
+</html>

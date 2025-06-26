@@ -11,7 +11,7 @@ from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://chemswap_postgresql_user:6slh84CSVcPSni1v0GXGNqcMhnAfUWPA@dpg-d1ekh4euk2gs73argsvg-a.oregon-postgres.render.com/chemswap_postgresql'
 app.config['SECRET_KEY'] = 'mysecretkey'
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -107,10 +107,15 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+def capitalize_words(name):
+    name = name.strip()
+    return ' '.join(word[0].upper() + word[1:] if word else '' for word in name.split(' '))
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    full_name = capitalize_words(current_user.name)
+    return render_template('dashboard.html', full_name=full_name)
 
 @app.route('/convert', methods=['POST'])
 def convert():

@@ -1,4 +1,5 @@
 import os
+import base64
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, send_from_directory, session, redirect, url_for, flash, jsonify
 from convert_inchi import inchi_to_inchi, inchi_to_smiles, inchi_sdf_visualize, inchi_to_xyz_visualize
@@ -14,8 +15,8 @@ from flask_bcrypt import Bcrypt
 
 load_dotenv()
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://chemswap_postgresql_user:6slh84CSVcPSni1v0GXGNqcMhnAfUWPA@dpg-d1ekh4euk2gs73argsvg-a.oregon-postgres.render.com/chemswap_postgresql'
+app.config['SECRET_KEY'] = 'mysecretkey'
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
@@ -53,6 +54,16 @@ class LoginForm(FlaskForm):
     password = PasswordField(validators=[InputRequired(), Length(min=4, max=150)], 
                            render_kw={"placeholder": "Password"})
     submit = SubmitField('Login', render_kw={'class': 'btn'})
+
+class SavedConversion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    input_type = db.Column(db.String(50))
+    chemical_input = db.Column(db.Text)
+    output_type = db.Column(db.String(50))
+    output_text = db.Column(db.Text)
+    output_file = db.Column(db.String(255))
 
 TEMP_DIR = "temp_files"
 IMAGE_DIR = "static/images"
@@ -138,7 +149,6 @@ def convert():
         output_text = None
         html_3d = None
 
-        # Append inputs for Lipinski plot only if input type is SMILES or InChi (since plot only supports those)
         if input_type in ["SMILES", "InChi"]:
             lipinski_input_list.append((input_type, chemical_input))
 
@@ -162,10 +172,9 @@ def convert():
                 elif output_type == "XYZ":
                     output_file, output_image_file, html_3d = smiles_to_xyz_visualize(chemical_input)
             else:
-                # For other input types, skip Lipinski and conversion or handle as needed
                 output_text = "N/A"
         except Exception:
-            # On any conversion error, mark output as N/A gracefully
+
             output_text = "N/A"
             output_file = None
             output_image_file = None
@@ -181,10 +190,79 @@ def convert():
             'html_3d': html_3d
         })
 
-    # Generate Lipinski plot HTML file (saved in temp_files/lipinski_plot.html)
     lipinski_plot_file = process_lipinski_inputs(lipinski_input_list)
 
     return render_template('result.html', results=results, lipinski_plot_file=lipinski_plot_file)
+
+@app.route('/save_conversions', methods=['POST'])
+@login_required
+def save_conversions():
+    selected_indices = request.form.getlist('selected_rows')
+
+    for idx in selected_indices:
+        input_type = request.form.get(f'input_type_{idx}')
+        chemical_input = request.form.get(f'chemical_input_{idx}')
+        output_type = request.form.get(f'output_type_{idx}')
+        output_text = request.form.get(f'output_text_{idx}')
+        output_file = request.form.get(f'output_file_{idx}')
+
+        new_conversion = SavedConversion(
+            user_id=current_user.id,
+            input_type=input_type,
+            chemical_input=chemical_input,
+            output_type=output_type,
+            output_text=output_text,
+            output_file=output_file
+        )
+        db.session.add(new_conversion)
+
+    db.session.commit()
+    flash("Selected conversions saved!", "success")
+    return redirect(url_for('dashboard'))
+
+@app.route('/saved_conversions')
+@login_required
+def saved_conversions():
+    conversions = SavedConversion.query.filter_by(user_id=current_user.id).all()
+    for row in conversions:
+        row.image_2d = None
+        row.html_3d = None
+        if row.output_type in ['SDF', 'XYZ']:
+            if row.input_type == 'InChI':
+                _, image_file, html_3d = inchi_sdf_visualize(row.chemical_input)
+            elif row.input_type == 'SMILES':
+                _, image_file, html_3d = smiles_sdf_visualize(row.chemical_input)
+            else:
+                image_file, html_3d = None, None
+
+            if image_file:
+                with open(image_file, "rb") as img_f:
+                    encoded_str = base64.b64encode(img_f.read()).decode('utf-8')
+                row.image_2d = encoded_str
+            else:
+                row.image_2d = None
+
+            row.html_3d = html_3d
+        else:
+            row.image_2d = None
+            row.html_3d = None
+    return render_template('saved_conversions.html', conversions=conversions)
+
+@app.route('/delete_saved_conversions', methods=['POST'])
+@login_required
+def delete_saved_conversions():
+    delete_ids = request.form.getlist('delete_ids')
+    if delete_ids:
+        SavedConversion.query.filter(
+            SavedConversion.user_id == current_user.id,
+            SavedConversion.id.in_(delete_ids)
+        ).delete(synchronize_session=False)
+        db.session.commit()
+        flash(f"Deleted {len(delete_ids)} conversion(s).", "success")
+    else:
+        flash("No conversions selected for deletion.", "warning")
+
+    return redirect(url_for('saved_conversions'))
 
 @app.route('/download/<filename>')
 def download_file(filename):

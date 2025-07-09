@@ -61,7 +61,10 @@
         <button type="submit" class="submit-btn">Convert</button>
       </form>
     </div>
-    <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+    <div class="header-buttons">
+      <a href="{{ url_for('saved_conversions') }}" class="header-button">Saved Conversions</a>
+      <a href="{{ url_for('logout') }}" class="header-button">Logout</a>
+    </div>
   </div>
 
   <script>
@@ -89,5 +92,9 @@
       inputRows.appendChild(newRow);
     });
   </script>
+
+<footer class="footer">
+  <p>&copy; 2025 ArGan's Lab</p>
+</footer>
 </body>
 </html>

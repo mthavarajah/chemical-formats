@@ -71,6 +71,23 @@ body {
     max-height: 90vh;
     border-radius: 12px;
 }
+.logo-wrapper {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.logo-wrapper img:first-child {
+  align-self: flex-start;
+  max-width: 200px;
+  height: auto;
+}
+
+.logo-wrapper img:last-child {
+  align-self: flex-end;
+  max-width: 200px;
+  height: auto;
+}
 @media (max-width: 768px) {
     body {
         flex-direction: column;
@@ -85,9 +102,11 @@ body {
 </head>
 <body>
 
-<!-- Left Side: Logo, Welcome, Buttons -->
 <div class="left">
-    <img src="/static/images/logo.png" alt="ChemSwap Logo" width="200" height="90">
+    <div class="logo-wrapper-vertical">
+        <img src="/static/images/logo.png" alt="ChemSwap Logo" width="200" height="90" />
+        <img src="/static/images/arganslab-transparent-logo.png" alt="ArgansLab Logo" width="200" height="100" />
+    </div>
     <h1>Welcome to ChemSwap</h1>
     <p>Convert chemical formats with ease.</p>
     <div class="buttons">
@@ -96,9 +115,7 @@ body {
     </div>
 </div>
 
-<!-- Right Side: Images -->
 <div class="right">
-    <!-- Add any images you want here -->
     <img src="/static/images/home-image.jpg" alt="Chemical illustration">
 </div>
 

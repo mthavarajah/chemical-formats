@@ -2,81 +2,39 @@ import os
 import base64
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, send_from_directory, session, redirect, url_for, flash, jsonify
+from werkzeug.utils import secure_filename
+from flask_login import login_user, login_required, logout_user, current_user, LoginManager
+from flask_bcrypt import Bcrypt
 from convert_inchi import inchi_to_inchi, inchi_to_smiles, inchi_sdf_visualize, inchi_to_xyz_visualize
 from convert_smiles import smiles_to_smiles, smiles_to_inchi, smiles_sdf_visualize, smiles_to_xyz_visualize
 from lipinski_plot import process_lipinski_inputs
-from werkzeug.utils import secure_filename
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin, login_user, login_required, logout_user, current_user, LoginManager
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import InputRequired, Length, ValidationError
-from flask_bcrypt import Bcrypt
+from models import db, User, SavedConversion, RegisterForm, LoginForm
 
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 SECRET_KEY = os.getenv('SECRET_KEY')
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SECRET_KEY'] = SECRET_KEY
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
 
+db.init_app(app)
+bcrypt = Bcrypt(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), nullable=False)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
-    profile_image = db.Column(db.String(255), default="static/css/images/sample.png")
-
-class RegisterForm(FlaskForm):
-    name = StringField(validators=[InputRequired(), Length(min=1, max=150)],
-                       render_kw={"placeholder": "Full Name"})
-    username = StringField(validators=[InputRequired(), Length(min=4, max=150)], 
-                           render_kw={"placeholder": "Username"})
-    password = PasswordField(validators=[InputRequired(), Length(min=4, max=150)], 
-                             render_kw={"placeholder": "Password"})
-    submit = SubmitField('Register', render_kw={'class': 'btn'})
-
-    def validate_username(self, username):
-        existing_user = User.query.filter_by(username=username.data.lower()).first()
-        if existing_user:
-            raise ValidationError('Username already exists.')
-
-class LoginForm(FlaskForm):
-    username = StringField(validators=[InputRequired(), Length(min=4, max=150)],
-                           render_kw={"placeholder": "Username"})
-    password = PasswordField(validators=[InputRequired(), Length(min=4, max=150)], 
-                           render_kw={"placeholder": "Password"})
-    submit = SubmitField('Login', render_kw={'class': 'btn'})
-
-class SavedConversion(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    input_type = db.Column(db.String(50))
-    chemical_input = db.Column(db.Text)
-    output_type = db.Column(db.String(50))
-    output_text = db.Column(db.Text)
-    output_file = db.Column(db.String(255))
-
 TEMP_DIR = "temp_files"
 IMAGE_DIR = "static/images"
-if not os.path.exists(TEMP_DIR):
-    os.makedirs(TEMP_DIR)
-if not os.path.exists(IMAGE_DIR):
-    os.makedirs(IMAGE_DIR)
+os.makedirs(TEMP_DIR, exist_ok=True)
+os.makedirs(IMAGE_DIR, exist_ok=True)
 
 ALLOWED_INPUT_TYPES = ["InChi", "SMILES"]
 ALLOWED_OUTPUT_TYPES = ["SMILES", "InChi", "SDF", "XYZ"]
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 @app.route('/')
 def home():
@@ -87,12 +45,9 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data.lower()).first()
-        if user:
-            if bcrypt.check_password_hash(user.password, form.password.data):
-                login_user(user)
-                return redirect(url_for('dashboard'))
-            else:
-                flash("Incorrect username or password.", "error")
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            login_user(user)
+            return redirect(url_for('dashboard'))
         else:
             flash("Incorrect username or password.", "error")
     return render_template('login.html', form=form)
@@ -103,20 +58,21 @@ def register():
     if form.validate_on_submit():
         try:
             hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-            new_user = User(name=form.name.data,
-                            username=form.username.data.lower(),
-                            password=hashed_password)
+            new_user = User(
+                name=form.name.data,
+                username=form.username.data.lower(),
+                password=hashed_password
+            )
             db.session.add(new_user)
             db.session.commit()
             flash("Registration successful! Please log in.", "success")
             return redirect(url_for('login'))
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             flash("An error occurred during registration. Please try again.", "error")
     elif request.method == 'POST':
         flash("Please fix the errors in the form.", "error")
     return render_template('register.html', form=form)
-
 
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
@@ -125,8 +81,7 @@ def logout():
     return redirect(url_for('login'))
 
 def capitalize_words(name):
-    name = name.strip()
-    return ' '.join(word[0].upper() + word[1:] if word else '' for word in name.split(' '))
+    return ' '.join(word.capitalize() for word in name.strip().split())
 
 @app.route('/dashboard')
 @login_required
@@ -174,14 +129,8 @@ def convert():
                     output_file, output_image_file, html_3d = smiles_sdf_visualize(chemical_input)
                 elif output_type == "XYZ":
                     output_file, output_image_file, html_3d = smiles_to_xyz_visualize(chemical_input)
-            else:
-                output_text = "N/A"
         except Exception:
-
             output_text = "N/A"
-            output_file = None
-            output_image_file = None
-            html_3d = None
 
         results.append({
             'input_type': input_type,
@@ -201,24 +150,16 @@ def convert():
 @login_required
 def save_conversions():
     selected_indices = request.form.getlist('selected_rows')
-
     for idx in selected_indices:
-        input_type = request.form.get(f'input_type_{idx}')
-        chemical_input = request.form.get(f'chemical_input_{idx}')
-        output_type = request.form.get(f'output_type_{idx}')
-        output_text = request.form.get(f'output_text_{idx}')
-        output_file = request.form.get(f'output_file_{idx}')
-
         new_conversion = SavedConversion(
             user_id=current_user.id,
-            input_type=input_type,
-            chemical_input=chemical_input,
-            output_type=output_type,
-            output_text=output_text,
-            output_file=output_file
+            input_type=request.form.get(f'input_type_{idx}'),
+            chemical_input=request.form.get(f'chemical_input_{idx}'),
+            output_type=request.form.get(f'output_type_{idx}'),
+            output_text=request.form.get(f'output_text_{idx}'),
+            output_file=request.form.get(f'output_file_{idx}')
         )
         db.session.add(new_conversion)
-
     db.session.commit()
     flash("Selected conversions saved!", "success")
     return redirect(url_for('dashboard'))
@@ -242,13 +183,7 @@ def saved_conversions():
                 with open(image_file, "rb") as img_f:
                     encoded_str = base64.b64encode(img_f.read()).decode('utf-8')
                 row.image_2d = encoded_str
-            else:
-                row.image_2d = None
-
             row.html_3d = html_3d
-        else:
-            row.image_2d = None
-            row.html_3d = None
     return render_template('saved_conversions.html', conversions=conversions)
 
 @app.route('/delete_saved_conversions', methods=['POST'])
@@ -264,7 +199,6 @@ def delete_saved_conversions():
         flash(f"Deleted {len(delete_ids)} conversion(s).", "success")
     else:
         flash("No conversions selected for deletion.", "warning")
-
     return redirect(url_for('saved_conversions'))
 
 @app.route('/download/<filename>')
@@ -291,14 +225,12 @@ def upload_profile_image():
         db.session.commit()
     return redirect(request.referrer or url_for('dashboard'))
 
-
 @app.route('/delete_profile_image', methods=['POST'])
 @login_required
 def delete_profile_image():
     current_user.profile_image = 'images/sample.png'
     db.session.commit()
     return redirect(request.referrer or url_for('dashboard'))
-
 
 @app.errorhandler(500)
 def internal_server_error(error):

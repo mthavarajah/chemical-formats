@@ -6,9 +6,8 @@
   </div>
 
   <div class="profile-dropdown">
-    <img src="{{ url_for('static', filename=current_user.profile_image or 'images/default-profile.png') }}"
-         alt="Profile Picture" class="profile-pic" onclick="toggleDropdown()" />
-
+    <img src="{{ url_for('static', filename=(current_user.profile_image | default('images/default-profile.png'))) }}"
+     alt="Profile Picture" class="profile-pic" onclick="toggleDropdown()" />
     <div id="dropdown-menu" class="dropdown-content">
       <p><strong>{{ current_user.name }}</strong></p>
 

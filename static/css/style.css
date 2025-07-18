@@ -12,7 +12,7 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    padding-top: 60px;
+    padding-top: 20px;
 }
 
 .container {
@@ -31,15 +31,7 @@ body {
     padding: 10px;
 }
 
-.logo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 30px;
-}
 
-
-/* Form Rows */
 .form-row {
     display: flex;
     gap: 20px;
@@ -163,7 +155,13 @@ input::placeholder {
     background-color: #c4c4c4;
 }
 
-/* New Logo Styling */
+.logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
 .logo-wrapper {
     text-align: center;
     margin-bottom: 40px;
@@ -171,6 +169,18 @@ input::placeholder {
 
 .logo-wrapper img {
     display: inline-block;
+    vertical-align: bottom;
+    max-width: 250px;
+    height: auto;
+    transition: transform 0.3s ease;
+}
+
+.logo-wrapper img:first-child {
+    transform: translateX(-20px);
+}
+
+.logo-wrapper img:last-child {
+    transform: translateX(20px);
 }
 
 /* Adjust body for layout */

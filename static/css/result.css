@@ -13,6 +13,7 @@ body {
   padding: var(--base-spacing-unit);
   font-family: 'Source Sans Pro', sans-serif;
   margin: 0;
+  padding-top: 60px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -231,4 +232,32 @@ output {
   text-align: center;
   font-size: 1.2rem;
   display: block;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: var(--base-spacing-unit);
+}
+
+.pagination button {
+  background-color: var(--color-alpha);
+  color: var(--color-form-highlight);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #434343;
+}
+
+.pagination button:disabled {
+  background-color: #7a7a7a;
+  cursor: not-allowed;
+  color: #cccccc;
 }

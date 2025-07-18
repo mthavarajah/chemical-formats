@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Saved Conversions</title>
+    <title>Sessions</title>
     <link rel="stylesheet" href="/static/css/result.css" />
     <script src="https://kit.fontawesome.com/772b7313f2.js" crossorigin="anonymous"></script>
 </head>
 <body>
+{% include '_header.html' %}
 <div class="container">
-    <h1 style="text-align:center; margin-bottom: 24px;">Saved Conversions</h1>
+    <h1 style="text-align:center; margin-bottom: 24px;">Saved Sessions</h1>
 
     <form method="POST" action="{{ url_for('delete_saved_conversions') }}">
       <div class="table" role="table" aria-label="Saved Conversions Table">
@@ -27,64 +28,53 @@
               {% for row in conversions %}
               <div class="table-row" role="row">
                   <div class="table-data" role="cell" style="width: 40px; text-align: center;">
-                    <input type="checkbox" name="delete_ids" value="{{ row.id }}" class="row-checkbox" aria-label="Select conversion {{ loop.index }}" />
+                    <input type="checkbox" name="delete_ids" value="{{ row.id }}" class="row-checkbox" aria-label="Select conversion to delete" />
                   </div>
                   <div class="table-data" role="cell">{{ row.input_type }}</div>
-                  <div class="table-data" role="cell" style="word-break: break-word; max-width: 200px;">{{ row.chemical_input }}</div>
+                  <div class="table-data" role="cell" style="word-break: break-word; max-width: 200px;">
+                    {{ row.chemical_input }}
+                  </div>
                   <div class="table-data" role="cell">{{ row.output_type }}</div>
                   <div class="table-data output-cell" role="cell" style="max-width: 300px;">
-                      {% if row.error %}
-                          <span style="color: red; font-weight: bold;">{{ row.error }}</span>
-                      {% else %}
-                          {% if row.output_type in ['SDF', 'XYZ'] %}
-                              <button type="button" class="toggle-btn" aria-label="Toggle 2D/3D View">Show 3D</button>
-                              <img src="data:image/png;base64,{{ row.image_2d }}" alt="2D Structure" class="output-image output-2d" style="display: block;" />
-                              <div class="output-3d" style="display: none;">
-                                  {{ row.html_3d|safe }}
-                              </div>
-                          {% else %}
-                              {% if row.output_text %}
-                                  {{ row.output_text }}
-                              {% else %}
-                                  N/A
-                              {% endif %}
-                          {% endif %}
-                      {% endif %}
+                    {% if row.output_type in ['SDF', 'XYZ'] %}
+                      <button type="button" class="toggle-btn" aria-label="Toggle 2D/3D View">Show 3D</button>
+                      <img src="data:image/png;base64,{{ row.image_2d }}" alt="2D Structure" class="output-image output-2d" style="display: block;" />
+                      <div class="output-3d" style="display: none;">
+                        {{ row.html_3d|safe }}
+                      </div>
+                    {% else %}
+                      {{ row.output_text or 'N/A' }}
+                    {% endif %}
                   </div>
                   <div class="table-data" role="cell">
-                      {% if row.error %}
-                          N/A
-                      {% else %}
-                          {% if row.output_file %}
-                              <a href="{{ url_for('download_file', filename=row.output_file) }}" download>
-                                  <i class="fa-solid fa-download" style="font-size: 30px; color: #000000;"></i>
-                              </a>
-                          {% else %}
-                              N/A
-                          {% endif %}
-                      {% endif %}
+                    {% if row.output_file %}
+                      <a href="{{ url_for('download_file', filename=row.output_file) }}" download>
+                        <i class="fa-solid fa-download" style="font-size: 30px; color: #000000;"></i>
+                      </a>
+                    {% else %}
+                      N/A
+                    {% endif %}
                   </div>
               </div>
               {% endfor %}
           </div>
       </div>
 
-      <button type="submit" style="margin-top:20px;" onclick="return confirm('Are you sure you want to delete the selected conversions?');">Delete Selected</button>
+      <div class="pagination" id="pagination-controls">
+        <button id="first-page" aria-label="First Page">First</button>
+        <button id="prev-page" aria-label="Previous Page">Prev</button>
+        <span id="page-info" aria-live="polite" style="align-self:center; font-weight:bold;"></span>
+        <button id="next-page" aria-label="Next Page">Next</button>
+        <button id="last-page" aria-label="Last Page">Last</button>
+      </div>
+
+      <button type="submit" style="margin-top: 20px;">Delete Selected</button>
     </form>
 
-    <button onclick="window.history.back()" style="margin-top:20px;">Go Back</button>
+    <button onclick="window.history.back()" style="margin-top: 20px;">Go Back</button>
 </div>
 
 <script>
-  // Select all checkbox logic
-  const selectAll = document.getElementById('select_all');
-  const checkboxes = document.querySelectorAll('.row-checkbox');
-
-  selectAll.addEventListener('change', () => {
-    checkboxes.forEach(cb => cb.checked = selectAll.checked);
-  });
-
-  // Toggle 2D/3D view buttons
   document.querySelectorAll('.toggle-btn').forEach(button => {
     button.addEventListener('click', () => {
       const container = button.closest('.output-cell');
@@ -102,6 +92,57 @@
       }
     });
   });
+
+  // Select/Deselect all checkboxes
+  const selectAllCheckbox = document.getElementById('select_all');
+  selectAllCheckbox.addEventListener('change', () => {
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+      cb.checked = selectAllCheckbox.checked;
+    });
+  });
+
+  // Pagination Script
+  (function() {
+    const rows = document.querySelectorAll('.table-content .table-row');
+    const rowsPerPage = 5;
+    let currentPage = 1;
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+    const firstBtn = document.getElementById('first-page');
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    const lastBtn = document.getElementById('last-page');
+    const pageInfo = document.getElementById('page-info');
+
+    function updatePaginationButtons() {
+      firstBtn.disabled = currentPage === 1;
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages;
+      lastBtn.disabled = currentPage === totalPages;
+    }
+
+    function showPage(page) {
+      if (page < 1) page = 1;
+      if (page > totalPages) page = totalPages;
+      currentPage = page;
+
+      rows.forEach((row, index) => {
+        row.style.display = (index >= (currentPage - 1) * rowsPerPage && index < currentPage * rowsPerPage)
+          ? 'flex' : 'none';
+      });
+
+      pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+      updatePaginationButtons();
+    }
+
+    firstBtn.addEventListener('click', () => showPage(1));
+    prevBtn.addEventListener('click', () => showPage(currentPage - 1));
+    nextBtn.addEventListener('click', () => showPage(currentPage + 1));
+    lastBtn.addEventListener('click', () => showPage(totalPages));
+
+    showPage(1);
+  })();
 </script>
+
 </body>
 </html>

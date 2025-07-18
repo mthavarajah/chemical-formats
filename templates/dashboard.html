@@ -7,12 +7,12 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
-  <div class="welcome-message">
-      <h2>Welcome, {{ full_name }}</h2>
-  </div>
+  {% include '_header.html' %}
+
   <div class="logo-wrapper">
-    <img src="/static/images/logo.png" alt="ChemSwap Logo" width="250" height="110">
+    <img src="/static/images/logo.png" alt="ChemSwap Logo" width="250" height="110" />
   </div>
+
   <div class="container">
     <div class="form-container">
       <form action="/convert" method="POST" id="conversion-form">
@@ -61,10 +61,6 @@
         <button type="submit" class="submit-btn">Convert</button>
       </form>
     </div>
-    <div class="header-buttons">
-      <a href="{{ url_for('saved_conversions') }}" class="header-button">Saved Conversions</a>
-      <a href="{{ url_for('logout') }}" class="header-button">Logout</a>
-    </div>
   </div>
 
   <script>
@@ -81,8 +77,8 @@
       const newRow = firstRow.cloneNode(true);
 
       // Reset input fields
-      newRow.querySelectorAll("input").forEach(input => input.value = "");
-      newRow.querySelectorAll("select").forEach(select => select.value = "SMILES");
+      newRow.querySelectorAll("input").forEach(input => (input.value = ""));
+      newRow.querySelectorAll("select").forEach(select => (select.value = "SMILES"));
 
       // Show and attach delete button
       const delBtn = newRow.querySelector(".delete-row-btn");
@@ -93,8 +89,8 @@
     });
   </script>
 
-<footer class="footer">
-  <p>&copy; 2025 ArGan's Lab</p>
-</footer>
+  <footer class="footer">
+    <p>&copy; 2025 ArGan's Lab</p>
+  </footer>
 </body>
 </html>

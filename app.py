@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, send_from_directory, session,
 from convert_inchi import inchi_to_inchi, inchi_to_smiles, inchi_sdf_visualize, inchi_to_xyz_visualize
 from convert_smiles import smiles_to_smiles, smiles_to_inchi, smiles_sdf_visualize, smiles_to_xyz_visualize
 from lipinski_plot import process_lipinski_inputs
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, login_required, logout_user, current_user, LoginManager
 from flask_wtf import FlaskForm
@@ -14,9 +14,11 @@ from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bcrypt import Bcrypt
 
 load_dotenv()
+DATABASE_URL = os.getenv('DATABASE_URL')
+SECRET_KEY = os.getenv('SECRET_KEY')
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://chemswap_postgresql_user:6slh84CSVcPSni1v0GXGNqcMhnAfUWPA@dpg-d1ekh4euk2gs73argsvg-a.oregon-postgres.render.com/chemswap_postgresql'
-app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SECRET_KEY'] = SECRET_KEY
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
@@ -33,6 +35,7 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(150), nullable=False)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
+    profile_image = db.Column(db.String(255), default="static/css/images/sample.png")
 
 class RegisterForm(FlaskForm):
     name = StringField(validators=[InputRequired(), Length(min=1, max=150)],
@@ -275,6 +278,27 @@ def serve_image(filename):
 @app.route('/lipinski_plot')
 def serve_lipinski_plot():
     return send_from_directory('temp_files', 'lipinski_plot.html')
+
+@app.route('/upload_profile_image', methods=['POST'])
+@login_required
+def upload_profile_image():
+    file = request.files.get('profile_image')
+    if file:
+        filename = secure_filename(file.filename)
+        path = os.path.join('static', 'uploads', filename)
+        file.save(path)
+        current_user.profile_image = f'uploads/{filename}'
+        db.session.commit()
+    return redirect(request.referrer or url_for('dashboard'))
+
+
+@app.route('/delete_profile_image', methods=['POST'])
+@login_required
+def delete_profile_image():
+    current_user.profile_image = 'images/sample.png'
+    db.session.commit()
+    return redirect(request.referrer or url_for('dashboard'))
+
 
 @app.errorhandler(500)
 def internal_server_error(error):
